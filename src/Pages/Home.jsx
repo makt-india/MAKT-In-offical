@@ -1,5 +1,5 @@
-import HeroSection from "../components/HeroSection";
-import SectionNavigator from "../components/SectionNavigator";
+import HeroSection from "../Components/HeroSection";
+import SectionNavigator from "../Components/SectionNavigator";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
