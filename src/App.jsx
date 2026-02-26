@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { useState, lazy, Suspense, useEffect } from "react";
 
-import ScrollToTopButton from "./components/ScrollToTopButton";
+import ScrollToTopButton from "./Components/ScrollToTopButton";
 import Navbar from "./Components/Navbar";
 import IntroOverlay from "./Components/IntroOverlay";
 import Footer from "./Components/Footer";
