@@ -1,0 +1,13 @@
+@import "tailwindcss";@import "tailwindcss";
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  scroll-snap-type: y mandatory;
+  background: #000;
+}
+
+section {
+  scroll-snap-align: start;
+}
