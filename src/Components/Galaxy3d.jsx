@@ -1,91 +1,121 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { Link } from "react-router-dom";
 
-export default function Galaxy3D() {
+// ─── Static data outside component: zero re-allocation on renders ───────────
+const STATS = [
+  { value: "1,200+", label: "Investor Leads / Month" },
+  { value: "18%",    label: "Qualified Conversion Rate" },
+  { value: "Multi-City", label: "Targeting Infrastructure" },
+];
+
+const ATM_DOMAINS = ["findiatmfranchise.com", "atmfranchise.in", "ownatm.in"];
+
+// ─── Memoized pure sub-components ──────────────────────────────────────────
+
+const StatCard = memo(({ value, label }) => (
+  <div className="flex flex-col items-center gap-2">
+    <span className="text-2xl md:text-3xl font-bold text-white">{value}</span>
+    <span className="text-xs md:text-sm text-emerald-500/60 font-normal">{label}</span>
+  </div>
+));
+StatCard.displayName = "StatCard";
+
+const DomainLink = memo(({ domain }) => (
+  <a
+    href={`https://${domain}`}
+    target="_blank"
+    rel="noreferrer"
+    className="block hover:text-emerald-300 hover:underline transition-colors break-words"
+  >
+    {domain}
+  </a>
+));
+DomainLink.displayName = "DomainLink";
+
+// ─── Main Component ────────────────────────────────────────────────────────
+function Galaxy3D() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     let renderer, galaxy, bgStars, animationFrameId;
-    let THREE;
+    let paused = false;
     let cleanup;
 
     const init = async () => {
       if (!canvasRef.current) return;
 
-      THREE = await import("three");
+      const THREE = await import("three");
 
       const scene = new THREE.Scene();
-      const isMobile = window.innerWidth < 768;
-      const isLowEnd = navigator.hardwareConcurrency <= 4;
+      const isMobile   = window.innerWidth < 768;
+      const isLowEnd   = navigator.hardwareConcurrency <= 4;
 
       const parameters = {
-        count: isMobile ? 30000 : isLowEnd ? 50000 : 90000,
-        size: isMobile ? 0.012 : 0.008,
-        radius: 5,
-        branches: 4,
-        spin: 1.2,
-        randomness: 0.25,
+        count:           isMobile ? 30000 : isLowEnd ? 50000 : 90000,
+        size:            isMobile ? 0.012 : 0.008,
+        radius:          5,
+        branches:        4,
+        spin:            1.2,
+        randomness:      0.25,
         randomnessPower: 3.5,
-        insideColor: "#ff6030",
-        outsideColor: "#1b3984",
+        insideColor:     "#ff6030",
+        outsideColor:    "#1b3984",
       };
 
-      // Smooth interpolation state
       const state = {
-        mouseX: 0,
-        mouseY: 0,
-        targetMouseX: 0,
-        targetMouseY: 0,
-        scrollY: window.scrollY,
+        mouseX:      0, mouseY:      0,
+        targetMouseX:0, targetMouseY:0,
+        scrollY:     window.scrollY,
         targetScrollY: window.scrollY,
-        galaxyRotY: 0,
-        galaxyRotX: 0,
-        galaxyRotZ: 0,
-        cameraZ: 6,
-        cameraY: 2.5,
+        cameraZ:     6,
+        cameraY:     2.5,
       };
 
       const lerp = (a, b, t) => a + (b - a) * t;
 
+      // ── Galaxy generation ─────────────────────────────────────────────
       const generateGalaxy = () => {
-        const geometry = new THREE.BufferGeometry();
+        const geometry  = new THREE.BufferGeometry();
         const positions = new Float32Array(parameters.count * 3);
-        const colors = new Float32Array(parameters.count * 3);
+        const colors    = new Float32Array(parameters.count * 3);
 
-        const colorInside = new THREE.Color(parameters.insideColor);
+        const colorInside  = new THREE.Color(parameters.insideColor);
         const colorOutside = new THREE.Color(parameters.outsideColor);
+        // FIX: reuse a single Color object instead of cloning 90k times
+        const mixedColor   = new THREE.Color();
 
         for (let i = 0; i < parameters.count; i++) {
-          const i3 = i * 3;
-          const radius = Math.random() * parameters.radius;
-          const spinAngle = radius * parameters.spin;
-          const branchAngle =
-            ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+          const i3          = i * 3;
+          const radius      = Math.random() * parameters.radius;
+          const spinAngle   = radius * parameters.spin;
+          const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+          const rp          = parameters.randomnessPower;
+          const rnd         = parameters.randomness * radius;
 
-          const rp = parameters.randomnessPower;
-          const rx = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
-          const ry = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
-          const rz = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+          const rx = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * rnd;
+          const ry = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * rnd;
+          const rz = Math.pow(Math.random(), rp) * (Math.random() < 0.5 ? 1 : -1) * rnd;
 
           positions[i3]     = Math.cos(branchAngle + spinAngle) * radius + rx;
           positions[i3 + 1] = ry;
           positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + rz;
 
-          const mixedColor = colorInside.clone().lerp(colorOutside, radius / parameters.radius);
+          // FIX: copy + lerp in-place — no heap allocation per star
+          mixedColor.copy(colorInside).lerp(colorOutside, radius / parameters.radius);
           colors[i3]     = mixedColor.r;
           colors[i3 + 1] = mixedColor.g;
           colors[i3 + 2] = mixedColor.b;
         }
 
         geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute("color",    new THREE.BufferAttribute(colors,    3));
 
         const material = new THREE.PointsMaterial({
-          size: parameters.size,
-          sizeAttenuation: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          vertexColors: true,
+          size:           parameters.size,
+          sizeAttenuation:true,
+          depthWrite:     false,
+          blending:       THREE.AdditiveBlending,
+          vertexColors:   true,
         });
 
         return new THREE.Points(geometry, material);
@@ -93,30 +123,29 @@ export default function Galaxy3D() {
 
       const generateBackgroundStars = () => {
         const starCount = isMobile ? 3000 : 6000;
-        const geometry = new THREE.BufferGeometry();
+        const geometry  = new THREE.BufferGeometry();
         const positions = new Float32Array(starCount * 3);
 
         for (let i = 0; i < starCount; i++) {
-          const i3 = i * 3;
+          const i3     = i * 3;
           const radius = 20 + Math.random() * 20;
-          const theta = Math.random() * Math.PI * 2;
-          const phi = Math.acos(2 * Math.random() - 1);
+          const theta  = Math.random() * Math.PI * 2;
+          const phi    = Math.acos(2 * Math.random() - 1);
           positions[i3]     = radius * Math.sin(phi) * Math.cos(theta);
           positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
           positions[i3 + 2] = radius * Math.cos(phi);
         }
 
         geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-
         return new THREE.Points(geometry, new THREE.PointsMaterial({
-          size: 0.015,
-          color: "#ffffff",
+          size:        0.015,
+          color:       "#ffffff",
           transparent: true,
-          opacity: 0.5,
+          opacity:     0.5,
         }));
       };
 
-      galaxy = generateGalaxy();
+      galaxy  = generateGalaxy();
       bgStars = generateBackgroundStars();
       scene.add(galaxy);
       scene.add(bgStars);
@@ -126,60 +155,73 @@ export default function Galaxy3D() {
       const camera = new THREE.PerspectiveCamera(70, sizes.width / sizes.height, 0.1, 100);
       camera.position.set(0, 2.5, 6);
 
+      // FIX: cache lookAt target — avoids new Vector3 allocation every frame
+      const LOOK_AT_TARGET = new THREE.Vector3(0, 0, 0);
+
       renderer = new THREE.WebGLRenderer({
-        canvas: canvasRef.current,
-        alpha: true,
-        antialias: !isMobile,
+        canvas:          canvasRef.current,
+        alpha:           true,
+        antialias:       !isMobile,
         powerPreference: "high-performance",
       });
       renderer.setSize(sizes.width, sizes.height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
 
-      // Event handlers
+      // FIX: cache maxScroll — recalculate only on resize, not every frame
+      let maxScroll = document.body.scrollHeight - window.innerHeight;
+
+      // ── Event handlers ────────────────────────────────────────────────
       const handleScroll = () => { state.targetScrollY = window.scrollY; };
 
       const handleMouseMove = (e) => {
-        state.targetMouseX = (e.clientX / sizes.width - 0.5);
-        state.targetMouseY = (e.clientY / sizes.height - 0.5);
+        state.targetMouseX =  e.clientX / sizes.width  - 0.5;
+        state.targetMouseY =  e.clientY / sizes.height - 0.5;
       };
 
+      // FIX: debounced resize — prevents forced layout on every resize pixel
+      let resizeTimer;
       const handleResize = () => {
-        sizes.width = window.innerWidth;
-        sizes.height = window.innerHeight;
-        camera.aspect = sizes.width / sizes.height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(sizes.width, sizes.height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, sizes.width < 768 ? 1.5 : 2));
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          sizes.width  = window.innerWidth;
+          sizes.height = window.innerHeight;
+          maxScroll    = document.body.scrollHeight - sizes.height; // refresh cache
+          camera.aspect = sizes.width / sizes.height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(sizes.width, sizes.height);
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, sizes.width < 768 ? 1.5 : 2));
+        }, 150);
       };
 
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      window.addEventListener("mousemove", handleMouseMove, { passive: true });
-      window.addEventListener("resize", handleResize);
+      // FIX: pause render loop when tab is hidden
+      const handleVisibility = () => { paused = document.hidden; };
+
+      window.addEventListener("scroll",           handleScroll,     { passive: true });
+      window.addEventListener("mousemove",        handleMouseMove,  { passive: true });
+      window.addEventListener("resize",           handleResize);
+      document.addEventListener("visibilitychange", handleVisibility);
 
       let lastTime = 0;
-      const FPS_CAP = isMobile ? 45 : 60;
+      const FPS_CAP   = isMobile ? 45 : 60;
       const FRAME_MIN = 1000 / FPS_CAP;
+      const lerpFactor = isMobile ? 0.06 : 0.05;
 
       const tick = (timestamp) => {
         animationFrameId = window.requestAnimationFrame(tick);
 
-        // FPS cap for performance
+        // FIX: skip rendering entirely when tab is hidden
+        if (paused) return;
         if (timestamp - lastTime < FRAME_MIN) return;
-        const delta = Math.min((timestamp - lastTime) / 1000, 0.05); // clamp delta
-        lastTime = timestamp;
 
+        lastTime = timestamp;
         const elapsed = timestamp / 1000;
 
-        // Smooth lerp for all values - tighter on mobile for responsiveness
-        const lerpFactor = isMobile ? 0.06 : 0.05;
-        state.scrollY  = lerp(state.scrollY,  state.targetScrollY,  lerpFactor);
-        state.mouseX   = lerp(state.mouseX,   state.targetMouseX,   lerpFactor);
-        state.mouseY   = lerp(state.mouseY,   state.targetMouseY,   lerpFactor);
+        state.scrollY = lerp(state.scrollY, state.targetScrollY, lerpFactor);
+        state.mouseX  = lerp(state.mouseX,  state.targetMouseX,  lerpFactor);
+        state.mouseY  = lerp(state.mouseY,  state.targetMouseY,  lerpFactor);
 
-        const maxScroll = document.body.scrollHeight - window.innerHeight;
         const scrollProgress = maxScroll > 0 ? Math.min(state.scrollY / maxScroll, 1) : 0;
 
-        // Smooth camera targets
         const targetCamZ = scrollProgress < 0.33 ? 6 : scrollProgress < 0.66 ? 5 : 4;
         const targetCamY = 2.5 - scrollProgress * 2;
 
@@ -189,26 +231,25 @@ export default function Galaxy3D() {
         camera.position.z = state.cameraZ;
         camera.position.y = state.cameraY;
 
-        // Smooth galaxy rotation
-        const targetRotX = state.mouseY * 0.3;
-        const targetRotZ = state.mouseX * 0.3;
-
         galaxy.rotation.y = elapsed * 0.08 + scrollProgress * Math.PI;
-        galaxy.rotation.x = lerp(galaxy.rotation.x, targetRotX, 0.04);
-        galaxy.rotation.z = lerp(galaxy.rotation.z, targetRotZ, 0.04);
+        galaxy.rotation.x = lerp(galaxy.rotation.x, state.mouseY * 0.3, 0.04);
+        galaxy.rotation.z = lerp(galaxy.rotation.z, state.mouseX * 0.3, 0.04);
 
         bgStars.rotation.y = elapsed * 0.02;
 
-        camera.lookAt(0, 0, 0);
+        // FIX: use cached Vector3 instead of new allocation per frame
+        camera.lookAt(LOOK_AT_TARGET);
         renderer.render(scene, camera);
       };
 
       animationFrameId = window.requestAnimationFrame(tick);
 
       cleanup = () => {
-        window.removeEventListener("scroll", handleScroll);
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("resize", handleResize);
+        clearTimeout(resizeTimer);
+        window.removeEventListener("scroll",            handleScroll);
+        window.removeEventListener("mousemove",         handleMouseMove);
+        window.removeEventListener("resize",            handleResize);
+        document.removeEventListener("visibilitychange", handleVisibility);
         window.cancelAnimationFrame(animationFrameId);
         galaxy.geometry.dispose();
         galaxy.material.dispose();
@@ -224,10 +265,15 @@ export default function Galaxy3D() {
 
   return (
     <div className="relative w-full bg-[#00050d]">
+      {/*
+        FIX: removed `willChange: "transform"` from canvas.
+        Permanent willChange forces a GPU compositing layer even when nothing
+        changes, wasting VRAM and increasing paint complexity.
+        The canvas manages its own compositing via WebGL; no CSS hint needed.
+      */}
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
-        style={{ willChange: "transform" }}
       />
 
       <main className="relative z-10 text-white">
@@ -258,22 +304,14 @@ export default function Galaxy3D() {
           </div>
         </section>
 
-        {/* AUTHORITY STATS */}
+        {/* AUTHORITY STATS — FIX: static array + memoized child, no inline object literals */}
         <section className="min-h-screen flex flex-col justify-center items-center text-center px-4 sm:px-6 py-20">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-10 md:mb-12">
             Proven Performance
           </h2>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12 w-full max-w-3xl mx-auto">
-            {[
-              { value: "1,200+", label: "Investor Leads / Month" },
-              { value: "18%",    label: "Qualified Conversion Rate" },
-              { value: "Multi-City", label: "Targeting Infrastructure" },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center gap-2">
-                <span className="text-2xl md:text-3xl font-bold text-white">{value}</span>
-                <span className="text-xs md:text-sm text-emerald-500/60 font-normal">{label}</span>
-              </div>
+            {STATS.map(({ value, label }) => (
+              <StatCard key={label} value={value} label={label} />
             ))}
           </div>
         </section>
@@ -298,11 +336,9 @@ export default function Galaxy3D() {
             </p>
             <div className="mt-6 text-xs md:text-sm text-emerald-400 font-mono space-y-1">
               <div>Live Projects:</div>
-              {["findiatmfranchise.com", "atmfranchise.in", "ownatm.in"].map(domain => (
-                <a key={domain} href={`https://${domain}`} target="_blank" rel="noreferrer"
-                  className="block hover:text-emerald-300 hover:underline transition-colors break-words">
-                  {domain}
-                </a>
+              {/* FIX: static array + memoized DomainLink */}
+              {ATM_DOMAINS.map(domain => (
+                <DomainLink key={domain} domain={domain} />
               ))}
             </div>
             <div className="mt-6 text-[10px] md:text-xs text-gray-500">
@@ -407,3 +443,5 @@ export default function Galaxy3D() {
     </div>
   );
 }
+
+export default memo(Galaxy3D);

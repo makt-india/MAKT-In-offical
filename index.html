@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ─── Primary SEO ──────────────────────────────────────── -->
+    <!-- ───────────────── SEO ───────────────── -->
     <title>MAKT Solutions | IT, Digital Growth & AI Automation</title>
     <meta name="description" content="MAKT Solutions Private Limited — We engineer investor acquisition infrastructure, AI automation systems, SaaS platforms, and performance digital campaigns built for scale." />
     <meta name="keywords" content="MAKT Solutions, IT solutions, digital marketing, AI automation, lead generation, ATM franchise, SaaS development, CRM automation, investor acquisition" />
@@ -12,25 +12,25 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://maktsolutions.com/" />
 
-    <!-- ─── Open Graph (Facebook, WhatsApp, LinkedIn) ────────── -->
-    <meta property="og:type"        content="website" />
-    <meta property="og:url"         content="https://maktsolutions.com/" />
-    <meta property="og:title"       content="MAKT Solutions | IT, Digital Growth & AI Automation" />
+    <!-- ───────────────── Open Graph ───────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://maktsolutions.com/" />
+    <meta property="og:title" content="MAKT Solutions | IT, Digital Growth & AI Automation" />
     <meta property="og:description" content="We engineer investor acquisition infrastructure, AI automation systems, SaaS platforms, and performance digital campaigns built for scale." />
-    <meta property="og:image"       content="https://maktsolutions.com/img/og-cover.png" />
-    <meta property="og:image:width"  content="1200" />
+    <meta property="og:image" content="https://maktsolutions.com/img/og-cover.png" />
+    <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name"   content="MAKT Solutions" />
-    <meta property="og:locale"      content="en_IN" />
+    <meta property="og:site_name" content="MAKT Solutions" />
+    <meta property="og:locale" content="en_IN" />
 
-    <!-- ─── Twitter Card ─────────────────────────────────────── -->
-    <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:url"         content="https://maktsolutions.com/" />
-    <meta name="twitter:title"       content="MAKT Solutions | IT, Digital Growth & AI Automation" />
+    <!-- ───────────────── Twitter ───────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://maktsolutions.com/" />
+    <meta name="twitter:title" content="MAKT Solutions | IT, Digital Growth & AI Automation" />
     <meta name="twitter:description" content="We engineer investor acquisition infrastructure, AI automation systems, SaaS platforms, and performance digital campaigns built for scale." />
-    <meta name="twitter:image"       content="https://maktsolutions.com/img/og-cover.png" />
+    <meta name="twitter:image" content="https://maktsolutions.com/img/og-cover.png" />
 
-    <!-- ─── Theme & PWA ──────────────────────────────────────── -->
+    <!-- ───────────────── Theme / PWA ───────────────── -->
     <meta name="theme-color" content="#020B18" />
     <meta name="color-scheme" content="dark" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -38,19 +38,32 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MAKT Solutions" />
 
-    <!-- ─── Favicons ─────────────────────────────────────────── -->
-    <link rel="icon"             type="image/png" sizes="32x32" href="/img/favicon-32.png" />
-    <link rel="icon"             type="image/png" sizes="16x16" href="/img/favicon-16.png" />
-    <link rel="apple-touch-icon" sizes="180x180"               href="/img/apple-touch-icon.png" />
-    <!-- Fallback for browsers that don't support sized variants -->
+    <!-- ───────────────── Favicons ───────────────── -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
     <link rel="shortcut icon" href="/img/logo1.png" />
 
-    <!-- ─── Performance: DNS prefetch / preconnect ───────────── -->
-    <link rel="preconnect"    href="https://fonts.googleapis.com" />
-    <link rel="preconnect"    href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch"  href="https://www.googletagmanager.com" />
+    <!-- ───────────────── Performance Optimizations ───────────────── -->
 
-    <!-- ─── Structured Data (JSON-LD) ────────────────────────── -->
+    <!-- Preconnect to external origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+    <!-- 🔥 Preload LCP Hero Image -->
+    <link 
+      rel="preload" 
+      as="image" 
+      href="/img/hero1.webp" 
+      fetchpriority="high"
+      type="image/webp"
+    />
+
+    <!-- 🔥 Preload Main Entry (Vite SPA boot faster) -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+
+    <!-- ───────────────── Structured Data ───────────────── -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -81,6 +94,8 @@
 
   <body>
     <div id="root"></div>
+
+    <!-- SPA Entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
