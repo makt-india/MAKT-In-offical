@@ -163,7 +163,7 @@ const ProjectCard = memo(function ProjectCard({ project, index }) {
       <div
         className="relative h-full p-6 md:p-8 rounded-2xl border border-white/10
         bg-black/60 backdrop-blur-sm
-        shadow-lg hover:shadow-xl
+        shadow-lg hover:shadow-xl       
         transition-[box-shadow,border-color] duration-300 overflow-hidden"
       >
         <div className="flex items-start gap-4 mb-5">
